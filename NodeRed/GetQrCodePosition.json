@@ -1,0 +1,653 @@
+[
+    {
+        "id": "5d80c087fa00856a",
+        "type": "tab",
+        "label": "Get QR Code Postion",
+        "disabled": false,
+        "info": "This flow return the 3 angles of a QR code.",
+        "env": []
+    },
+    {
+        "id": "24357ecd19da0df9",
+        "type": "group",
+        "z": "5d80c087fa00856a",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "3a9c9b4fb32e9524",
+            "a441515a2b996104",
+            "ff4d322c90e27294",
+            "dd2160d08d35735c",
+            "12855ee1483c7559",
+            "01ab9951776cbbe5",
+            "ea196c0ae0ecc862",
+            "5107b8efb68bb323",
+            "2979f0f8a69cf38c",
+            "a3b7fb893034fd4a",
+            "3b287f145380cc43",
+            "e132c1d7b7034bc4",
+            "437109bf3d0e5d43",
+            "4a63e53311e4214a",
+            "58484319e28c668d",
+            "a9c521d48dc50b77",
+            "e602efd061ac67c2",
+            "f611725ff04c774d",
+            "4893a81f20251630",
+            "97f690034bbdb9a3",
+            "25e8335c08187657",
+            "b3194200a5faf4cc",
+            "586263b129eb8953"
+        ],
+        "x": 34,
+        "y": 39,
+        "w": 1092,
+        "h": 762
+    },
+    {
+        "id": "3a9c9b4fb32e9524",
+        "type": "file",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "name": "",
+        "filename": "C:/Users/cedric.lenoir/Documents/CtrlxNode/Plc_Test_Ui/Python/Node_QR_Code_Position.py",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 470,
+        "y": 220,
+        "wires": [
+            [
+                "5107b8efb68bb323"
+            ]
+        ]
+    },
+    {
+        "id": "a441515a2b996104",
+        "type": "template",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "name": "Build QR Code Position",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "'''\nThis program returns the QR code position from an image.\n'''\n\nimport sys\nimport cv2\nimport json\n\ndef read_image(path):\n    image = cv2.imread(path)\n    if image is None:\n        raise FileNotFoundError(f\"Image not found or could not be read: {path}\")\n    return image\n\n\nif __name__ == '__main__':             \n    # print(cv2.__version__)\n    # 4.6.0\n\n    try:\n        img = read_image(\"C:/Users/cedric.lenoir/Documents/CtrlxNode/Plc_Test_Ui/Python/CalibrateFromQrCode.jpg\")\n        detector = cv2.QRCodeDetector()\n        data, bbox, straight_qrcode = detector.detectAndDecode(img)\n    except FileNotFoundError as e:\n        bbox = None\n        img = None\n\n    # print(\"data:\", data)\n\n    if (bbox is not None) and (img is not None):\n        # print(\"QRCode détecté\")\n        # print(\"bbox:\", bbox)\n        # print(bbox[0][0])\n        # print(bbox[0][1])\n        # print(bbox[0][3])\n\n        angle_1 = (int(bbox[0][0][0]), int(bbox[0][0][1]))  # (x, y)\n        angle_2 = (int(bbox[0][1][0]), int(bbox[0][1][1]))  # (x, y)\n        angle_3 = (int(bbox[0][2][0]), int(bbox[0][2][1]))  # (x, y)\n        angle_4 = (int(bbox[0][3][0]), int(bbox[0][3][1]))  # (x, y)\n        color_green = (0, 255, 0)      # Green color (B, G, R)\n        color_red = (0, 0, 255)      # Green color (B, G, R)\n        thickness = 20           # 20 pixels thick\n        cv2.line(img, angle_1, angle_2, color_green, thickness)\n        cv2.line(img, angle_1, angle_4, color_red, thickness)\n\n        # Create JSON object with pixel value\n        data = {\n            \"pxCornerOne_x\": int(bbox[0][0][0]),\n            \"pxCornerOne_y\": int(bbox[0][0][1]),\n            \"pxCornerTwo_x\": int(bbox[0][1][0]),\n            \"pxCornerTwo_y\": int(bbox[0][1][1]),\n            \"pxCornerThree_x\": int(bbox[0][3][0]),\n            \"pxCornerThree_y\": int(bbox[0][3][1]),\n            \"xQR_Valid\": True,\n            \"strMessage\" : \"QRCode read successfully\"\n        }\n\n    else :\n        if (img is not None):\n            # print(\"Aucun QRCode détecté\")\n            # Create JSON object\n            data = {\n                \"pxCornerOne_x\": 0,\n                \"pxCornerOne_y\": 0,\n                \"pxCornerTwo_x\": 0,\n                \"pxCornerTwo_y\": 0,\n                \"pxCornerThree_x\": 0,\n                \"pxCornerThree_y\": 0,\n                \"xQR_Valid\": False,\n                \"strMessage\" : \"No QRCode detected\"        \n            }\n        else :\n            data = {\n                \"strMessage\" : \"Image not found or could not be read\",\n                \"xQR_Valid\": False        \n            }\n\n\n    # Convert JSON object to string and print\n    # This value is sent back to the Node.js server\n    print(json.dumps(data))\n\n    if img is None:\n        sys.exit(1)\n\n    # Show image with the QR code bounding box.\n    ImgResize = cv2.resize(img, (824, 600))\n    imgshow = cv2.imshow('Robot QR Code postion in Pixels', ImgResize)\n\n    cv2.waitKey(0)\n    cv2.destroyAllWindows()\n    sys.exit(0)\n",
+        "output": "str",
+        "x": 390,
+        "y": 120,
+        "wires": [
+            [
+                "3a9c9b4fb32e9524"
+            ]
+        ]
+    },
+    {
+        "id": "ff4d322c90e27294",
+        "type": "debug",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 420,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "dd2160d08d35735c",
+        "type": "inject",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 360,
+        "wires": [
+            [
+                "01ab9951776cbbe5"
+            ]
+        ]
+    },
+    {
+        "id": "12855ee1483c7559",
+        "type": "inject",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "name": "",
+        "props": [
+            {
+                "p": "kill",
+                "v": "g",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 120,
+        "wires": [
+            [
+                "a441515a2b996104"
+            ]
+        ]
+    },
+    {
+        "id": "01ab9951776cbbe5",
+        "type": "exec",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "command": "python C:/Users/cedric.lenoir/Documents/CtrlxNode/Plc_Test_Ui/Python/Node_QR_Code_Position.py -u",
+        "addpay": "payload",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "5",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 440,
+        "y": 440,
+        "wires": [
+            [
+                "ea196c0ae0ecc862",
+                "a9c521d48dc50b77"
+            ],
+            [
+                "58484319e28c668d"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "ea196c0ae0ecc862",
+        "type": "json",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 390,
+        "y": 520,
+        "wires": [
+            [
+                "e132c1d7b7034bc4",
+                "ff4d322c90e27294"
+            ]
+        ]
+    },
+    {
+        "id": "5107b8efb68bb323",
+        "type": "debug",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 880,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "2979f0f8a69cf38c",
+        "type": "comment",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "name": "Create python file that reads the sensor data",
+        "info": "",
+        "x": 430,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "a3b7fb893034fd4a",
+        "type": "comment",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "name": "A Python code to get QR code position",
+        "info": "",
+        "x": 450,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "3b287f145380cc43",
+        "type": "comment",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "name": "Get data from Python file",
+        "info": "",
+        "x": 790,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "e132c1d7b7034bc4",
+        "type": "function",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "name": "Get Data From Python",
+        "func": "var msgCornerOne_x = { payload: msg.payload.pxCornerOne_x };\nvar msgCornerOne_y = { payload: msg.payload.pxCornerOne_y };\n\nvar msgCornerTwo_x = { payload: msg.payload.pxCornerTwo_x };\nvar msgCornerTwo_y = { payload: msg.payload.pxCornerTwo_y };\n\nvar msgCornerThree_x = { payload: msg.payload.pxCornerThree_x };\nvar msgCornerThree_y = { payload: msg.payload.pxCornerThree_y };\n\nvar msgQrValid = { payload: msg.payload.xQR_Valid };\n\nvar msgFromPython = { payload: msg.payload.strMessage };\n\nreturn [msgCornerOne_x, \n        msgCornerOne_y,\n        msgCornerTwo_x,\n        msgCornerTwo_y,\n        msgCornerThree_x,\n        msgCornerThree_y,\n        msgQrValid,\n        msgFromPython];",
+        "outputs": 8,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 620,
+        "wires": [
+            [
+                "437109bf3d0e5d43"
+            ],
+            [
+                "4a63e53311e4214a"
+            ],
+            [
+                "f611725ff04c774d"
+            ],
+            [
+                "4893a81f20251630"
+            ],
+            [
+                "97f690034bbdb9a3"
+            ],
+            [
+                "25e8335c08187657"
+            ],
+            [
+                "b3194200a5faf4cc"
+            ],
+            [
+                "586263b129eb8953"
+            ]
+        ]
+    },
+    {
+        "id": "437109bf3d0e5d43",
+        "type": "ui-text",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "group": "e91e8157e9bfdd7e",
+        "order": 3,
+        "width": "3",
+        "height": "1",
+        "name": "",
+        "label": "Corner One X:",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "x": 940,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "4a63e53311e4214a",
+        "type": "ui-text",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "group": "e91e8157e9bfdd7e",
+        "order": 4,
+        "width": "3",
+        "height": "1",
+        "name": "",
+        "label": "Cornet One Y:",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "x": 940,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "58484319e28c668d",
+        "type": "debug",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "name": "Python Error",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1010,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "a9c521d48dc50b77",
+        "type": "debug",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "name": "Python Out",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1010,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "e602efd061ac67c2",
+        "type": "ui-button",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "group": "e91e8157e9bfdd7e",
+        "name": "",
+        "label": "Get QR Code Position",
+        "order": 1,
+        "width": "3",
+        "height": "1",
+        "emulateClick": false,
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "iconPosition": "left",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "buttonColor": "",
+        "textColor": "",
+        "iconColor": "",
+        "enableClick": true,
+        "enablePointerdown": false,
+        "pointerdownPayload": "",
+        "pointerdownPayloadType": "str",
+        "enablePointerup": false,
+        "pointerupPayload": "",
+        "pointerupPayloadType": "str",
+        "x": 160,
+        "y": 560,
+        "wires": [
+            [
+                "01ab9951776cbbe5"
+            ]
+        ]
+    },
+    {
+        "id": "f611725ff04c774d",
+        "type": "ui-text",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "group": "e91e8157e9bfdd7e",
+        "order": 5,
+        "width": "3",
+        "height": "1",
+        "name": "",
+        "label": "Corner Two X:",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "x": 940,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "4893a81f20251630",
+        "type": "ui-text",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "group": "e91e8157e9bfdd7e",
+        "order": 6,
+        "width": "3",
+        "height": "1",
+        "name": "",
+        "label": "Corner Two Y:",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "x": 940,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "97f690034bbdb9a3",
+        "type": "ui-text",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "group": "e91e8157e9bfdd7e",
+        "order": 7,
+        "width": "3",
+        "height": "1",
+        "name": "",
+        "label": "Corner Three X:",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "x": 940,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "25e8335c08187657",
+        "type": "ui-text",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "group": "e91e8157e9bfdd7e",
+        "order": 8,
+        "width": "3",
+        "height": "1",
+        "name": "",
+        "label": "Corner Three Y:",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "x": 940,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "b3194200a5faf4cc",
+        "type": "ui-radio-group",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "group": "e91e8157e9bfdd7e",
+        "name": "",
+        "label": "Select Option:",
+        "order": 2,
+        "width": "3",
+        "height": "1",
+        "columns": 1,
+        "passthru": true,
+        "options": [
+            {
+                "label": "QR Code valid",
+                "value": true,
+                "type": "bool"
+            },
+            {
+                "label": "QR Code error",
+                "value": false,
+                "type": "bool"
+            }
+        ],
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "x": 940,
+        "y": 720,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "586263b129eb8953",
+        "type": "ui-text",
+        "z": "5d80c087fa00856a",
+        "g": "24357ecd19da0df9",
+        "group": "e91e8157e9bfdd7e",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Message from Python",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "x": 960,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "e91e8157e9bfdd7e",
+        "type": "ui-group",
+        "name": "QR Code position",
+        "page": "66c6923e3822666a",
+        "width": 6,
+        "height": 1,
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "66c6923e3822666a",
+        "type": "ui-page",
+        "name": "User Interface for Lab OO",
+        "ui": "926d3079c9560d19",
+        "path": "/robot",
+        "icon": "robot-happy-outline",
+        "layout": "notebook",
+        "theme": "8966a7b403a8fb88",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "926d3079c9560d19",
+        "type": "ui-base",
+        "name": "Home",
+        "path": "/dashboard",
+        "appIcon": "factory",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "navigationStyle": "fixed",
+        "titleBarStyle": "default",
+        "showReconnectNotification": true,
+        "notificationDisplayTime": "1",
+        "showDisconnectNotification": true
+    },
+    {
+        "id": "8966a7b403a8fb88",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094ce",
+            "bgPage": "#8080ff",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    }
+]
