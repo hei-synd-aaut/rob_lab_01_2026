@@ -63,15 +63,16 @@ To simplify somewhat, you need to automate what I do manually. The presentation 
 
 ## List of document in this repo.
 
-- [Basics for Robot Kinematics Functions](./Robot_Kinematic_Functions)
+- [Basics for Robot Kinematics Functions](Robot_Kinematic_Functions.md
 - [More about PCS with Node-RED](About_PCS.md). Explain how to access PCS in the datalayer from Node-RED.
 - [Calibrate robot with QR Code](./How_To_Calibrate_Robot_with_QR_Code.md). Explain the process of principle of the calibration using the QR code on the plate.
 - [Bug report](BugToBeSolved.md). A serie of bugs or knowl problems.
 - [Calibration Version Beta du 29 octobre](Calibration%20Version%20Beta%20du%2029%20octobre.docx) **Attention document Word**, mais état avant de laisser tomber pour passer à autre chose...
 - [Python files for Node-RED](PythonFilesForNodeRed.md) some examples of files to take images and calibrate the system.
 
+---
 
-## Introduction
+## Work in program for futur use
 
 This work is in progress, started on october 9, 2025.
 
